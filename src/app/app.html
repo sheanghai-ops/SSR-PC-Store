@@ -1,0 +1,367 @@
+<header id="app-navbar">
+  <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm fixed-top">
+    <div class="container">
+      <a class="navbar-brand fw-bold text-primary" routerLink="/">▣ PC Shoppe</a>
+      <button class="navbar-toggler" type="button" aria-label="Toggle navigation" (click)="toggleMenu()"><span
+          class="navbar-toggler-icon"></span></button>
+      <div class="navbar-content" [class.open]="mobileMenuOpen()">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          <li class="nav-item"><a class="nav-link" routerLink="/" (click)="selectCategory('All')">Home</a></li>
+          <li class="nav-item"><a class="nav-link" routerLink="/" fragment="catalog"
+              (click)="selectCategory('All')">Catalog</a></li>
+          <li class="nav-item"><a class="nav-link" routerLink="/cart">Cart</a></li>
+        </ul>
+        <form class="nav-search d-flex" role="search" (submit)="$event.preventDefault()">
+          <input class="form-control form-control-sm" type="search" aria-label="Search computers"
+            placeholder="Search a PC..." [ngModel]="search()" (ngModelChange)="onSearch($event)"
+            [ngModelOptions]="{standalone: true}">
+        </form>
+        <a routerLink="/cart" class="btn btn-outline-primary position-relative nav-cart">Cart <span
+            class="badge rounded-pill bg-danger ms-1">{{ cart.totalCount() }}</span></a>
+      </div>
+    </div>
+  </nav>
+</header>
+
+<main class="page-fade">
+  @if (page() === '' || page() === 'category' || page() === 'product') {
+  @if (page() === 'product') {
+  @if (selectedProduct()) {
+  <section class="container detail-page py-4">
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb small">
+        <li class="breadcrumb-item"><a routerLink="/">Home</a></li>
+        <li class="breadcrumb-item active">{{ selectedProduct()!.name }}</li>
+      </ol>
+    </nav>
+    <div class="row g-4 align-items-start">
+      <div class="col-md-5">
+        <div class="detail-image-box"><img [src]="selectedProduct()!.image" [alt]="selectedProduct()!.name"></div>
+      </div>
+      <div class="col-md-7">
+        <div class="small text-uppercase text-muted mb-1">{{ selectedProduct()!.brand }} · {{
+          selectedProduct()!.category }}</div>
+        <h1 class="h2 fw-bold mb-2">{{ selectedProduct()!.name }}</h1>
+        <div class="rating-stars mb-3">★★★★★ <span class="text-muted">({{ selectedProduct()!.rating }} / 5 · {{
+            selectedProduct()!.reviewCount }} reviews)</span></div>
+        <div class="mb-3"><span class="price-tag fs-2">{{ money(selectedProduct()!.price) }}</span><span
+            class="price-old ms-2">{{ money(selectedProduct()!.originalPrice) }}</span></div>
+        <p class="mb-3">{{ selectedProduct()!.description }}</p>
+        <p class="text-success">✓ In stock ({{ selectedProduct()!.stockCount }} units)</p>
+        <div class="d-flex align-items-center gap-3 mb-4"><label class="fw-semibold mb-0">Quantity</label><input
+            aria-label="Quantity" type="number" class="form-control qty-box" min="1" [ngModel]="detailQuantity()"
+            (ngModelChange)="detailQuantity.set(+$event)" [ngModelOptions]="{standalone:true}"></div>
+        <div class="d-flex flex-wrap gap-2 mb-4"><button class="btn btn-brand px-4"
+            (click)="add(selectedProduct()!, detailQuantity())">Add to cart</button><button
+            class="btn btn-outline-primary px-4" (click)="buyNow(selectedProduct()!)">Buy now</button><a routerLink="/"
+            class="btn btn-outline-secondary px-4">Back to catalog</a></div>
+        <h2 class="h5 section-title">Specifications</h2>
+        <div class="table-responsive">
+          <table class="table table-sm spec-table">
+            <tbody>@for (row of getSpecRows(selectedProduct()!); track row[0]) {<tr>
+                <th class="text-capitalize">{{ row[0] }}</th>
+                <td>{{ row[1] }}</td>
+              </tr>}</tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+  } @else {<section class="container py-5 text-center">
+    <h1 class="h4">Product not found.</h1><a routerLink="/" class="btn btn-brand mt-3">Back to catalog</a>
+  </section>}
+  } @else {
+  @if (page() === '') {
+  <section class="hero-banner mb-4">
+    <div class="container">
+      <div class="row align-items-center">
+        <div class="col-lg-7">
+          <h1 class="display-6">Build your next battle station.</h1>
+          <p class="lead mb-4">Gaming towers, workstations, office desktops and mini PCs, hand-picked and ready to ship.
+            (Demo store, sample data only.)</p><a routerLink="/" fragment="catalog"
+            class="btn btn-lg btn-light fw-semibold">Shop the catalog ↓</a>
+        </div>
+        <div class="col-lg-5 col-12 text-center hero-art"><img src="assets/hero-battle-station.svg" class="img-fluid"
+            alt="Gaming PC, monitor, keyboard and mouse"></div>
+      </div>
+    </div>
+  </section>
+  }
+  <section id="catalog" class="container mb-5">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
+      <h2 class="section-title mb-0">{{ category() === 'All' ? 'Our Computers' : category() + ' PCs' }}</h2><label
+        class="d-flex align-items-center gap-2 small text-muted">Sort by <select
+          class="form-select form-select-sm sort-select" [ngModel]="sortBy()" (ngModelChange)="sortBy.set($event)"
+          [ngModelOptions]="{standalone:true}">
+          <option value="featured">Featured</option>
+          <option value="price-asc">Price: low to high</option>
+          <option value="price-desc">Price: high to low</option>
+          <option value="rating">Top rated</option>
+          <option value="name">Name</option>
+        </select></label>
+    </div>
+    <div class="d-flex flex-wrap gap-2 mb-4"><button class="category-pill" [class.active]="category() === 'All'"
+        (click)="selectCategory('All'); $event.stopPropagation(); routerNavigate('/')">All PCs</button>@for (item of
+      products.getCategories().slice(1); track item) {<button class="category-pill" [class.active]="category() === item"
+        (click)="openCategory(item)">{{ item }}</button>}</div>
+    <h6 class="text-muted mb-3">@if(search()){Search results for “{{ search() }}” ({{ visibleProducts().length }})}
+      @else {{{ category() }} PCs ({{ visibleProducts().length }})}</h6>
+    <div class="row g-4">
+      @for (product of visibleProducts(); track product.id) {
+      <div class="col-sm-6 col-lg-4 col-xl-3">
+        <article class="card h-100 shadow-sm product-card position-relative">
+          @if (product.originalPrice > product.price) {<span
+            class="badge badge-sale position-absolute top-0 start-0 m-2">Sale</span>}
+          <a [routerLink]="['/product', product.id]"><img
+              [src]="category() === 'All' && product.catalogImage ? product.catalogImage : product.image"
+              class="card-img-top product-card-img" [alt]="product.name"></a>
+          <div class="card-body d-flex flex-column">
+            <div class="small text-uppercase text-muted mb-1">{{ product.brand }} · {{ product.category }}</div>
+            <h3 class="h6 card-title mb-1"><a [routerLink]="['/product', product.id]"
+                class="text-dark stretched-link-text">{{ product.name }}</a></h3>
+            <div class="rating-stars mb-2">★★★★★ <span class="text-muted">({{ product.rating }})</span></div>
+            <p class="small text-muted product-summary">{{ product.summary }}</p>
+            <div class="mt-auto">
+              <div class="mb-2"><span class="price-tag fs-5">{{ money(product.price) }}</span><span
+                  class="price-old ms-2">{{ money(product.originalPrice) }}</span></div>
+              <div class="mb-2 text-success small">✓ In stock</div>
+              <div class="d-grid gap-2 d-sm-flex"><a [routerLink]="['/product', product.id]"
+                  class="btn btn-sm btn-outline-secondary flex-fill">Details</a><button
+                  class="btn btn-sm btn-brand flex-fill" (click)="add(product)">Add to cart</button></div>
+            </div>
+          </div>
+        </article>
+      </div>
+      } @empty {<div class="col-12">
+        <p class="text-muted text-center py-5">No PC matches your search. Try another keyword or category.</p>
+      </div>}
+    </div>
+  </section>
+  @if (page() === '') {<section class="container mb-5">
+    <div class="row g-4 text-center">
+      <div class="col-md-4">
+        <div class="benefit-icon">🚚</div>
+        <h3 class="h6 mt-2">Fast Shipping</h3>
+        <p class="small text-muted">Orders processed quickly, free shipping over $1,500.</p>
+      </div>
+      <div class="col-md-4">
+        <div class="benefit-icon">✓</div>
+        <h3 class="h6 mt-2">2-Year Warranty</h3>
+        <p class="small text-muted">Every PC comes with a full manufacturer warranty.</p>
+      </div>
+      <div class="col-md-4">
+        <div class="benefit-icon">♡</div>
+        <h3 class="h6 mt-2">Here to Help</h3>
+        <p class="small text-muted">Friendly support for any questions about your build.</p>
+      </div>
+    </div>
+  </section>}
+  }
+  } @else if (page() === 'cart') {
+  <section class="container page-fade py-4">
+    <h1 class="h4 section-title">Your Shopping Cart</h1>@if (!cart.items().length) {<div class="text-center py-5">
+      <div class="empty-cart-icon">🛒</div>
+      <p class="text-muted mt-3">Your cart is empty.</p><a routerLink="/" class="btn btn-brand">Browse PCs</a>
+    </div>} @else {<div class="row g-4">
+      <div class="col-lg-8">
+        <div class="table-responsive">
+          <table class="table align-middle bg-white">
+            <thead>
+              <tr class="small text-muted text-uppercase">
+                <th>Product</th>
+                <th class="text-center">Price</th>
+                <th class="text-center">Quantity</th>
+                <th class="text-center">Subtotal</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>@for (item of cart.items(); track item.product.id) {<tr>
+                <td>
+                  <div class="d-flex align-items-center gap-3"><img [src]="item.product.image" class="cart-item-img"
+                      [alt]="item.product.name">
+                    <div><a [routerLink]="['/product', item.product.id]" class="fw-semibold text-dark">{{
+                        item.product.name }}</a>
+                      <div class="small text-muted">{{ item.product.brand }} · {{ item.product.category }}</div>
+                    </div>
+                  </div>
+                </td>
+                <td class="text-center">{{ money(item.product.price) }}</td>
+                <td class="text-center">
+                  <div class="quantity-stepper"><button
+                      (click)="updateQuantity(item.product.id, item.quantity - 1)">−</button><span>{{ item.quantity
+                      }}</span><button (click)="updateQuantity(item.product.id, item.quantity + 1)">+</button></div>
+                </td>
+                <td class="text-center fw-semibold">{{ money(item.product.price * item.quantity) }}</td>
+                <td class="text-center"><button class="btn btn-sm btn-outline-danger"
+                    (click)="cart.removeFromCart(item.product.id)" aria-label="Remove item">×</button></td>
+              </tr>}</tbody>
+          </table>
+        </div>
+      </div>
+      <div class="col-lg-4">
+        <div class="checkout-summary-box p-4">
+          <h2 class="h6 mb-3">Order Summary</h2>
+          <div class="d-flex justify-content-between mb-2"><span class="text-muted">Subtotal</span><span>{{
+              money(cart.subtotal()) }}</span></div>
+          <div class="d-flex justify-content-between mb-2"><span class="text-muted">Shipping</span><span>{{
+              cart.shippingFee() ? money(cart.shippingFee()) : 'Free' }}</span></div>
+          <hr>
+          <div class="d-flex justify-content-between fw-bold fs-5 mb-3"><span>Total</span><span>{{ money(cart.total())
+              }}</span></div>
+          <div class="input-group mb-2"><input class="form-control" placeholder="Promo code" [ngModel]="promo()"
+              (ngModelChange)="promo.set($event)" [ngModelOptions]="{standalone:true}"><button
+              class="btn btn-outline-primary" (click)="applyPromo()">Apply</button></div><small class="text-muted">{{
+            promoMessage() }}</small><a routerLink="/checkout" class="btn btn-brand w-100 mt-3">Proceed to Checkout
+            →</a><a routerLink="/" class="btn btn-outline-secondary w-100 mt-2">Continue shopping</a>
+        </div>
+      </div>
+    </div>}
+  </section>
+  } @else if (page() === 'checkout') {
+  <section class="container page-fade py-4">
+    <h1 class="h4 section-title">Checkout</h1>@if (!cart.items().length) {<div class="alert alert-light">Your cart is
+      empty. <a routerLink="/">Browse PCs</a></div>} @else {<form #checkoutForm="ngForm" (ngSubmit)="placeOrder()"
+      class="row g-4">
+      <div class="col-lg-7">
+        <div class="checkout-summary-box p-4">
+          <h2 class="h5 mb-3">Delivery details</h2>
+          <div class="row g-3">
+            <div class="col-12"><label class="form-label">Full name</label><input class="form-control" name="fullName"
+                [(ngModel)]="customer.fullName" required></div>
+            <div class="col-md-6"><label class="form-label">Email</label><input class="form-control" type="email"
+                name="email" [(ngModel)]="customer.email" required></div>
+            <div class="col-md-6"><label class="form-label">Phone</label><input class="form-control" name="phone"
+                [(ngModel)]="customer.phone" required></div>
+            <div class="col-12"><label class="form-label">Street address</label><input class="form-control"
+                name="address" [(ngModel)]="customer.address" required></div>
+            <div class="col-md-6"><label class="form-label">City</label><input class="form-control" name="city"
+                [(ngModel)]="customer.city" required></div>
+            <div class="col-md-6"><label class="form-label">State / region</label><input class="form-control"
+                name="state" [(ngModel)]="customer.state" required></div>
+            <div class="col-md-6"><label class="form-label">ZIP / postal code</label><input class="form-control"
+                name="zipCode" [(ngModel)]="customer.zipCode" required></div>
+            <div class="col-md-6"><label class="form-label">Country</label><input class="form-control" name="country"
+                [(ngModel)]="customer.country" required></div>
+          </div>
+          <h2 class="h5 mt-4">Payment method</h2>
+          <div class="form-check"><input class="form-check-input" type="radio" name="payment"
+              [(ngModel)]="paymentMethod" value="card" id="payCard"><label class="form-check-label" for="payCard">Credit
+              / debit card</label></div>
+          <div class="form-check"><input class="form-check-input" type="radio" name="payment"
+              [(ngModel)]="paymentMethod" value="paypal" id="payPaypal"><label class="form-check-label"
+              for="payPaypal">PayPal</label></div>
+          <div class="form-check"><input class="form-check-input" type="radio" name="payment"
+              [(ngModel)]="paymentMethod" value="cod" id="payCod"><label class="form-check-label" for="payCod">Cash on
+              delivery</label></div>
+          <p class="small text-muted mt-3">Frontend demo only. No real payment will be processed.</p>
+        </div>
+      </div>
+      <div class="col-lg-5">
+        <div class="checkout-summary-box p-4">
+          <h2 class="h6 mb-3">Order Summary</h2>@for (item of cart.items(); track item.product.id) {<div
+            class="d-flex justify-content-between small mb-2"><span>{{ item.product.name }} × {{ item.quantity
+              }}</span><b>{{ money(item.product.price * item.quantity) }}</b></div>}
+          <hr>
+          <div class="d-flex justify-content-between mb-2"><span>Subtotal</span><b>{{ money(cart.subtotal()) }}</b>
+          </div>
+          <div class="d-flex justify-content-between mb-2"><span>Shipping</span><b>{{ cart.shippingFee() ?
+              money(cart.shippingFee()) : 'Free' }}</b></div>
+          <div class="d-flex justify-content-between mb-2"><span>Tax</span><b>{{ money(cart.tax()) }}</b></div>
+          <hr>
+          <div class="d-flex justify-content-between fw-bold fs-5 mb-3"><span>Total</span><b>{{ money(cart.total())
+              }}</b></div><button class="btn btn-brand w-100" [disabled]="!checkoutForm.valid">Place order</button>
+        </div>
+      </div>
+    </form>}
+  </section>
+  } @else if (page() === 'invoice') {
+  <section class="container page-fade py-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3 no-print">
+      <div>
+        <div class="text-success small fw-semibold">✓ ORDER CONFIRMED</div>
+        <h1 class="h4 mb-0">Thank you for your order</h1>
+      </div><button class="btn btn-outline-primary" (click)="downloadInvoice()">Download HTML invoice</button>
+    </div>
+    <article class="invoice-wrapper p-4 p-md-5">
+      <div class="invoice-head d-flex justify-content-between pb-3 mb-4">
+        <div>
+          <h2 class="h4 text-primary fw-bold">PC Shoppe</h2>
+          <p class="small text-muted">Desktop PCs, ready to go.</p>
+        </div>
+        <div class="text-end">
+          <div class="text-muted small">INVOICE</div>
+          <h3 class="h5">{{ order().orderId }}</h3>
+          <div class="small text-muted">{{ order().date }}</div>
+        </div>
+      </div>
+      <div class="row mb-4">
+        <div class="col-md-6">
+          <div class="small text-muted text-uppercase">Bill to</div>
+          <p class="mb-0 mt-2"><b>{{ order().customer.fullName || 'Demo Customer' }}</b><br>{{ order().customer.address
+            }}<br>{{ order().customer.city }} {{ order().customer.state }} {{ order().customer.zipCode }}<br>{{
+            order().customer.email }}</p>
+        </div>
+        <div class="col-md-6">
+          <div class="small text-muted text-uppercase">Payment</div>
+          <p class="mb-0 mt-2">{{ order().payment.method | titlecase }} · {{ order().payment.status }}<br>Reference: {{
+            order().payment.transactionId }}</p>
+        </div>
+      </div>
+      <div class="table-responsive">
+        <table class="table align-middle">
+          <thead>
+            <tr class="small text-muted text-uppercase">
+              <th>Item</th>
+              <th>Qty</th>
+              <th class="text-end">Total</th>
+            </tr>
+          </thead>
+          <tbody>@for (item of order().items; track item.product.id) {<tr>
+              <td><b>{{ item.product.name }}</b>
+                <div class="small text-muted">{{ item.product.specs.cpu }}</div>
+              </td>
+              <td>{{ item.quantity }}</td>
+              <td class="text-end">{{ money(item.product.price * item.quantity) }}</td>
+            </tr>}</tbody>
+        </table>
+      </div>
+      <div class="ms-auto invoice-totals">
+        <div class="d-flex justify-content-between py-1"><span>Subtotal</span><b>{{ money(order().subtotal) }}</b></div>
+        <div class="d-flex justify-content-between py-1"><span>Shipping</span><b>{{ money(order().shippingFee) }}</b>
+        </div>
+        <div class="d-flex justify-content-between py-1"><span>Tax</span><b>{{ money(order().tax) }}</b></div>
+        <div class="d-flex justify-content-between border-top mt-2 pt-3 fw-bold fs-5"><span>Total</span><b>{{
+            money(order().total) }}</b></div>
+      </div>
+    </article><a routerLink="/" class="btn btn-outline-secondary mt-3 no-print">← Back to catalog</a>
+  </section>
+  }
+</main>
+
+<footer id="app-footer" class="app-footer pt-5 pb-4 mt-5">
+  <div class="container">
+    <div class="row g-4">
+      <div class="col-md-4">
+        <h2 class="h5 text-white">PC Shoppe</h2>
+        <p class="small mb-0">A frontend demo store with gaming PCs, workstations, office desktops, and mini PCs. Sample
+          data only.</p>
+      </div>
+      <div class="col-md-4">
+        <h3 class="h6 text-white">Quick links</h3>
+        <ul class="list-unstyled small">
+          <li><a routerLink="/">Home / Catalog</a></li>
+          <li><a routerLink="/cart">My Cart</a></li>
+          <li><a routerLink="/checkout">Checkout</a></li>
+        </ul>
+      </div>
+      <div class="col-md-4">
+        <h3 class="h6 text-white">Contact SV34 PC Shop</h3>
+        <p class="small mb-0">sv34@pcshop.com<br>(+855) 027-10-2026</p>
+      </div>
+    </div>
+    <hr class="border-secondary">
+    <p class="small text-center mb-0">© 2026 PC Shoppe demo project. For learning purposes only.</p>
+  </div>
+</footer>
+@if (cart.toastMessage()) {<div class="store-toast">{{ cart.toastMessage() }}<button
+    (click)="cart.dismissToast()">×</button></div>}
